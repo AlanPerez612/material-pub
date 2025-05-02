@@ -302,7 +302,7 @@ const Carga = () => {
     setIsModalVisible(false);
     console.log('Modal cancelado')
   }
-  ModalOk =()=>{
+  const handleModalOk =()=>{
     console.log('Modal aceptado')
   }
 
@@ -411,7 +411,7 @@ const Carga = () => {
                               "Programa":selectedBeneficiario,
                               "Intra-programa":selectedBeneficiario.cve_intra_programa,
                               "Entidad federativa":selectedBeneficiario.cve_ent_fed,
-
+                              
 
 
                             });
