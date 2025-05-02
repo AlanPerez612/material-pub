@@ -7,6 +7,8 @@ import { Beneficiario, Beneficio } from '../../Interfaces/interfaces';
 import Navbar from '../../Components/Navbar';
 import Footer from '../../Components/Footer';
 import { Container } from '@mui/material';
+import { Modal, Form, message } from 'antd';
+import { green } from '@mui/material/colors';
 
 const { Content } = Layout;
 const { Search } = Input;
@@ -22,6 +24,9 @@ const FiltroProgramas: React.FC = () => {
     const [selectedInstitucion, setSelectedInstitucion] = useState<string | undefined>(undefined);
     const [selectedPrograma, setSelectedPrograma] = useState<string | undefined>(undefined);
     const [loading, setLoading] = useState<boolean>(false);
+    //Const para agregar
+    const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+    const [form] = Form.useForm();
 
     useEffect(() => {
         fetchData();
@@ -106,6 +111,40 @@ const FiltroProgramas: React.FC = () => {
         setSelectedInstitucion(undefined);
         setSelectedPrograma(undefined);
         setFilteredData(data);
+    };
+    //Const donde se declara el agregar programa
+    const handleAddProgram = () => {
+        setIsModalVisible(true);
+    };
+    
+    const handleModalOk = async () => {
+        try {
+            const values = await form.validateFields();
+            setLoading(true);
+            
+            // Aquí haces la llamada a tu API para agregar el programa
+            await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/programas`, {
+                nombre: values.nombrePrograma,
+                // otros campos necesarios
+            });
+            
+            message.success('Programa agregado correctamente');
+            form.resetFields();
+            setIsModalVisible(false);
+            
+            // Opcional: Recargar los datos si es necesario
+            // fetchData();
+        } catch (error) {
+            console.error('Error al agregar programa:', error);
+            message.error('Error al agregar el programa');
+        } finally {
+            setLoading(false);
+        }
+    };
+    
+    const handleModalCancel = () => {
+        form.resetFields();
+        setIsModalVisible(false);
     };
 
     const canDownload = filteredData.length > 0;
@@ -289,8 +328,12 @@ const FiltroProgramas: React.FC = () => {
                 >
                     <Option value="S140">Cuidando tu Bienestar 2024</Option>
                     <Option value="002">Programa para el cuidado 2024</Option>
+                    <Option value="002">Programa FPCrew</Option>
                     {/* Agrega más opciones según necesites */}
                 </Select>
+                <Button onClick={handleAddProgram} style={{ marginLeft: 8 }}>
+                        Agregar Programa
+                    </Button>
                 </Container>
                 <Table
                     columns={columns}
@@ -300,8 +343,53 @@ const FiltroProgramas: React.FC = () => {
                     }))}
                     scroll={{ x: 'max-content' }}
                 />
+                
             </Content>
             <Footer />
+            
+            <Modal
+            title="Agregar Nuevo Programa"
+            visible={isModalVisible}
+            onOk={handleModalOk}
+            onCancel={handleModalCancel}
+            okText="Agregar programa"
+            cancelText="Cancelar"
+            confirmLoading={loading}
+        >
+            <Form form={form} layout="vertical">
+            <Form.Item
+                    name="nombrePrograma"
+                    label="Nombre del Programa"
+                    rules={[
+                        { 
+                            required: true, 
+                            message: 'Por favor ingresa el nombre del programa' 
+                        }
+                    ]}
+                >
+                    <Input placeholder="Ej: Programa de Apoyo 2024" />
+                </Form.Item>
+                <Form.Item
+  name="nombreDependencia"
+  label="Dependencia"
+  rules={[{ required: true, message: 'Selecciona una dependencia' }]}
+>
+  <Select
+    showSearch
+    placeholder="Busca una dependencia"
+    optionFilterProp="children"
+  >
+    <Select.Option value="sdif">Sistema para el Desarrollo Integral de la Familia</Select.Option>
+    <Select.Option value="sbis">Secretaria de Bienestar e Igualdad Sustantiva</Select.Option>
+    <Select.Option value="stjl">Secretaria del Trabajo y Justicia Laboral</Select.Option>
+    <Select.Option value="inj">Instituto Nayarita de la Juventud</Select.Option>
+    <Select.Option value="cecan">Consejo Estatal para la Cultura y las Artes Nayarit</Select.Option>
+    <Select.Option value="ipvn">Instituo Promotor de la Vivienda Nayarit</Select.Option>
+  </Select>
+</Form.Item>
+            </Form>
+        </Modal>
+            
         </div>
     );
 };

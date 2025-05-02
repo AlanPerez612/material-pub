@@ -21,11 +21,16 @@ import {
   Typography,
   Container,
   TablePagination,
+  IconButton,
 } from '@mui/material';
 import Navbar from '../Components/Navbar';
 import Footer from '../../../Components/Footer';
 import { Beneficiario } from '../../../Interfaces/beneficiarioTable';
 import { logo64, logopub64 } from './imagenData';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { green } from '@mui/material/colors';
+import { Modal,Form,message, Input } from 'antd';
 
 const Carga = () => {
   const { data: session, status } = useSession();
@@ -35,6 +40,11 @@ const Carga = () => {
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  //Const para poder seleccionar un elemento de la tabla
+  const [selectedBeneficiario, setSelectedBeneficiario] = useState<Beneficiario | null>(null);
+  //Const para el modal de editar
+  const [isModalVisible,setIsModalVisible] = useState<boolean>(false);
+  const [form] = Form.useForm();
 
   if (status === 'loading') {
     return <p>Loading...</p>;
@@ -287,6 +297,15 @@ const Carga = () => {
     setPage(0);
   };
 
+  const handleModalCancel =()=>{
+    form.resetFields();
+    setIsModalVisible(false);
+    console.log('Modal cancelado')
+  }
+  ModalOk =()=>{
+    console.log('Modal aceptado')
+  }
+
   return (
     <div>
       <Navbar />
@@ -361,6 +380,75 @@ const Carga = () => {
                 'Carga de Archivos'
               )}
             </Button>
+            
+            
+              <div style={{ //Div de botones: Editar y Eliminar.
+               position: 'fixed',
+                bottom: '210px',
+                right: '30px',
+                display: 'flex',
+                gap: '15px',
+                zIndex: 1000,
+                padding: '10px',
+                borderRadius: '4px',
+                  }}>
+                        <IconButton  //Boton de Editar
+                        onClick={() => {
+                          if(selectedBeneficiario){
+                            form.setFieldValue({
+                              "CURP":selectedBeneficiario.curp,
+                              "Primer Apellido":selectedBeneficiario.primer_apellido,
+                              "Segundo apellido":selectedBeneficiario.segundo_apellido,
+                              "Nombre(s)":selectedBeneficiario.nombre,
+                              "Fehca de nacimiento":selectedBeneficiario.fecha_nacimiento,
+                              "Entidad de nacimiento":selectedBeneficiario.cve_ent_nac,
+                              "Sexo":selectedBeneficiario.sexo,
+                              "Discapacidad":selectedBeneficiario.discapacidad,
+                              "Indigena":selectedBeneficiario.indigena,
+                              "Estado civil":selectedBeneficiario.cve_civil,
+                              "Dependencia":selectedBeneficiario.cve_dependencia,
+                              "Institucion":selectedBeneficiario.cve_institucion,
+                              "Programa":selectedBeneficiario,
+                              "Intra-programa":selectedBeneficiario.cve_intra_programa,
+                              "Entidad federativa":selectedBeneficiario.cve_ent_fed,
+
+
+
+                            });
+                          }
+                          setIsModalVisible(true)
+                        }}
+                        disabled={!selectedBeneficiario}
+                        size='large'
+                        sx={{ 
+                          color: 'white',
+                          width:70,
+                          height:70,
+                          backgroundColor: selectedBeneficiario ? '#f1b222':'#BDBDBD',
+                          '&:hover': { 
+                            backgroundColor: selectedBeneficiario ? '#c59322' : '#BDBDBD' 
+                          },
+                        }}
+                      >
+                        <EditIcon />
+                      </IconButton>
+
+                      <IconButton //Boton de eliminar
+                        onClick={()=>console.log('Codigo para eliminar un elemento')}
+                        disabled={!selectedBeneficiario}
+                        sx={{
+                          width:70,
+                          height:70,
+                          color:'white',
+                          backgroundColor:selectedBeneficiario ? '#e74c3c':'#BDBDBD',
+                          '&:hover':{
+                            backgroundColor:selectedBeneficiario ?'#922b21':'#BDBDBD'
+                          }
+                        }}
+                        >
+                          <DeleteIcon/>
+                      </IconButton>
+                    </div>
 
             {error && <p style={{ color: 'red', textAlign: 'center', fontFamily: 'gothamrnd_medium' }}>{error}</p>}
             {beneficiarios.length > 0 && (
@@ -408,7 +496,13 @@ const Carga = () => {
                       {beneficiarios
                         .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                         .map((beneficiario, index) => (
-                          <TableRow key={index} sx={{ '&:nth-of-type(odd)': { backgroundColor: '#dacec0' } }}>
+                          <TableRow key={index} sx={{ 
+                            
+                            backgroundColor: selectedBeneficiario?.curp === beneficiario.curp ? '#79142A80' : undefined,
+                            '&:hover': { cursor: 'pointer', backgroundColor: '#79142A40' }
+                          }}
+                          onClick={() => setSelectedBeneficiario(beneficiario)}
+>
                             <TableCell sx={styles.tableCell2}>{index + 1 + page * rowsPerPage}</TableCell>
                             <TableCell sx={styles.tableCell2}>{beneficiario.curp}</TableCell>
                             <TableCell sx={styles.tableCell2}>{beneficiario.primer_apellido}</TableCell>
@@ -475,6 +569,237 @@ const Carga = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Modal //Modal que sera utilizado para editar la informacion de los beneficiarios
+      title = "Editar datos del beneficiario"
+      visible = {isModalVisible}
+      onOk = {handleModalOk}
+      onCancel = {handleModalCancel}
+      okText = "Solicitar cambios"
+      cancelText = "Cancelar"
+      confirmLoading = {loading}
+      >
+        <Form form = {form} layout='vertical'>
+          <Form.Item
+          name={"CURP"}
+          label = "CURP"
+          >
+            <Input placeholder='CURP del beneficiario'/>
+            </Form.Item>
+
+
+            <Form.Item
+            name={"Primer apellido"}
+            label = "Primer apellido"
+            >
+              <Input placeholder='Ingresa el primer apellido'/>
+            </Form.Item>
+
+            <Form.Item
+            name={"Segundo apellido"}
+            label="Segundo apellido"
+            >
+              <Input placeholder='Ingresa el segundo apellido'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Nombre(s)"}
+            label="Nombre(s)"
+            >
+              <Input placeholder='Ingresa el nombre'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Fecha de nacimiento"}
+            label="Fecha de nacimiento"
+            >
+              <Input placeholder='Ingresa la fecha de nacimiento'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Entidad de nacimiento"}
+            label="Entidad de nacimiento"
+            >
+              <Input placeholder='Ingresa la entidad de nacimiento'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Sexo"}
+            label="Sexo"
+            >
+              <Input placeholder='Ingresa el sexo del beneficiario'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Discapacidad"}
+            label="Discacpacidad"
+            >
+              <Input placeholder='Ingresa la capacidad si es necesario'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Indigena"}
+            label="Indigena"
+            >
+              <Input placeholder='Indigena si es necesario'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Estado civil"}
+            label="Estado civil"
+            >
+              <Input placeholder='Ingresa el estado civil'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Dependencia"}
+            label="Depencencia"
+            >
+              <Input placeholder='Ingresa su dependencia'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Institucion"}
+            label="Institucion"
+            >
+              <Input placeholder='Ingresa su institucion'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Programa"}
+            label="Programa"
+            >
+              <Input placeholder='Ingresa el programa al que pertenece'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Intra-programa"}
+            label="Intra-programa"
+            >
+              <Input placeholder='Ingrea el intra-programa al que pertenecen'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Entidad federativa"}
+            label="Entidad federativa"
+            >
+              <Input placeholder='Ingresa la entidad federativa correspondiente'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Municipio"}
+            label="Municipio"
+            >
+              <Input placeholder='Ingresa el municipio al que pertenece'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Localidad"}
+            label="Localidad"
+            >
+              <Input placeholder='Ingresa la localidad al que pertenece'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Fecha de beneficio"}
+            label="Fecha de beneficio"
+            >
+              <Input placeholder='Ejemplo: AAAAMMDD'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Tipo de beneficiario"}
+            label="Tipo de beneficiario"
+            >
+              <Input placeholder='Ingresa tipo de beneficiario'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Tipo de beneficio"}
+            label='Tipo de beneficio'
+            >
+              <Input placeholder='Ingresa el tipo de beneficio'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Cantidad de apoyo"}
+            label="Cantidad de apoyo"
+            >
+              <Input placeholder='Ingrese la cantidad de apoyo'></Input>
+            </Form.Item>
+            
+            <Form.Item
+            name={"Tipo de vial"}
+            label="Tipo de vial"
+            >
+              <Input placeholder='Tipo de vial'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Nombre de Vialidad"}
+            label="Nombre de vialidad"
+            >
+              <Input placeholder='Nombre de vialidad'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Numero de vialidad / Numero"}
+            label="Numero de vialidad / Numero"
+            >
+              <Input placeholder='Numero de vialidad / Numero'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Numero de vialidad / Alfanumérico"}
+            label="Numero de vialidad / Alfanumérico"
+            >
+              <Input placeholder='Ingrese su numero de vialidad / Alfanumérico'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Localidad"}
+            label="Localidad"
+            >
+              <Input placeholder='Ingrese su localidad'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Clave de localidad"}
+            label="Clave de localidad"
+            >
+              <Input placeholder='Ingrese su clave de localidad'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Clave de municipio"}
+            label="Clave de municipio"
+            >
+              <Input placeholder='Ingrese su clave de municipio'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Entidad federativa"}
+            label="Entidad federativa"
+            >
+              <Input placeholder='Ingrea la entidad federativa'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Clave de entidad federativa"}
+            label="Clave de entidad federativa"
+            >
+              <Input placeholder='Ingrese su clave de entidad federativa'></Input>
+            </Form.Item>
+
+            <Form.Item
+            name={"Observaciones"}
+            label="Observaciones"
+            >
+              <Input  placeholder='Ingresa las observaciones correspondientes'></Input>
+            </Form.Item>
+          </Form>    
+      </Modal>
+
     </div>
   );
 };
@@ -495,5 +820,15 @@ const styles = {
     borderBottom: '1px outset #d3d3d3',
     borderRight: '1px outset #d3d3d3',
     fontFamily: 'gothamrnd_medium'
+  },
+  selectedRow: {
+    backGroundColor:'#a6b9c3 !important',
+    '& td': { color: 'white !important' }
+  },
+  actionButtons: {
+    marginTop: '16px',
+    display: 'flex',
+    gap: '8px',
+    justifyContent: 'center'
   }
 };
